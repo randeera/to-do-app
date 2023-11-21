@@ -3,7 +3,6 @@ package lk.ijse.dep11.todo.to;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.NonNull;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
@@ -24,5 +23,5 @@ public class TaskTO implements Serializable {
     private Boolean status;
 
     public interface Update extends Default {}
-    public interface Create extends Default {}
+    public interface Create extends Default{}
 }

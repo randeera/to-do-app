@@ -13,6 +13,7 @@ import javax.annotation.PreDestroy;
 import javax.sql.DataSource;
 import javax.validation.Valid;
 import javax.validation.groups.Default;
+import java.sql.*;
 import java.util.List;
 
 @RestController
@@ -44,9 +45,22 @@ public class TaskHttpController {
 
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping(produces = "application/json", consumes = "application/json")
-    public TaskTO createTask(@RequestBody @Validated(TaskTO.Create.class) TaskTO task) {
-        System.out.println("createTask()");
-        return null;
+    public TaskTO createTask(@RequestBody @Validated TaskTO task) {
+        try (Connection connection = pool.getConnection()){
+            PreparedStatement stm = connection
+                    .prepareStatement("INSERT INTO task (description, status) VALUES (?, FALSE)",
+                            Statement.RETURN_GENERATED_KEYS);
+            stm.setString(1, task.getDescription());
+            stm.executeUpdate();
+            ResultSet generatedKeys = stm.getGeneratedKeys();
+            generatedKeys.next();
+            int id = generatedKeys.getInt(1);
+            task.setId(id);
+            task.setStatus(false);
+            return task;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @ResponseStatus(HttpStatus.NO_CONTENT)

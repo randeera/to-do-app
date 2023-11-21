@@ -1,6 +1,9 @@
 package lk.ijse.dep11.todo;
 
+import lk.ijse.dep11.todo.filter.CorsFilter;
 import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatcherServletInitializer;
+
+import javax.servlet.Filter;
 
 public class WebAppInitializer extends AbstractAnnotationConfigDispatcherServletInitializer {
     @Override
@@ -17,4 +20,9 @@ public class WebAppInitializer extends AbstractAnnotationConfigDispatcherServlet
     protected String[] getServletMappings() {
         return new String[]{"/"};
     }
+
+//    @Override
+//    protected Filter[] getServletFilters() {
+//        return new Filter[]{new CorsFilter()};
+//    }
 }

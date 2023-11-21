@@ -20,6 +20,8 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/tasks")
+//@CrossOrigin(origins = {"http://localhost:5500"})
+@CrossOrigin
 public class TaskHttpController {
 
     /*

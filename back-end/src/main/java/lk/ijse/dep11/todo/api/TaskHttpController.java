@@ -14,6 +14,8 @@ import javax.sql.DataSource;
 import javax.validation.Valid;
 import javax.validation.groups.Default;
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 @RestController
@@ -88,14 +90,39 @@ public class TaskHttpController {
 
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @DeleteMapping("/{id}")
-    public void deleteTask(@PathVariable("id") String taskId) {
-        System.out.println("deleteTask()");
+    public void deleteTask(@PathVariable("id") int taskId) {
+        try(Connection connection = pool.getConnection()){
+            PreparedStatement stmExist = connection
+                    .prepareStatement("SELECT * FROM task WHERE id = ?");
+            stmExist.setInt(1, taskId);
+            if (!stmExist.executeQuery().next()){
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Task Not Found");
+            }
+
+            PreparedStatement stm = connection.prepareStatement("DELETE FROM task WHERE id=?");
+            stm.setInt(1, taskId);
+            stm.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /* @ResponseStatus(HttpStatus.OK) */
     @GetMapping(produces = "application/json")
     public List<TaskTO> getAllTasks() {
-        System.out.println("getAllTasks()");
-        return null;
+        try(Connection connection = pool.getConnection()){
+            Statement stm = connection.createStatement();
+            ResultSet rst = stm.executeQuery("SELECT * FROM task ORDER BY id");
+            List<TaskTO> taskList = new LinkedList<>();
+            while (rst.next()){
+                int id = rst.getInt("id");
+                String description = rst.getString("description");
+                boolean status = rst.getBoolean("status");
+                taskList.add(new TaskTO(id, description, status));
+            }
+            return taskList;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

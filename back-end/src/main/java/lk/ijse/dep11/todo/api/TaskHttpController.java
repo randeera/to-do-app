@@ -1,11 +1,15 @@
 package lk.ijse.dep11.todo.api;
 
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 import lk.ijse.dep11.todo.to.TaskTO;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
+import javax.sql.DataSource;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/tasks")
@@ -16,6 +20,23 @@ public class TaskHttpController {
         it refers to the definition and set of rules (validation rules) for representing
         the structure of API data
     */
+
+    private final HikariDataSource pool;
+
+    public TaskHttpController() {
+        HikariConfig config = new HikariConfig();
+        config.setUsername("postgres");
+        config.setPassword("postgres");
+        config.setJdbcUrl("jdbc:postgresql://localhost:15000/dep11_todo_app");
+        config.setDriverClassName("org.postgresql.Driver");
+        config.addDataSourceProperty("maximumPoolSize", 10);
+        pool = new HikariDataSource(config);
+    }
+
+    @PreDestroy
+    public void destroy(){
+        pool.close();
+    }
 
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping(produces = "application/json", consumes = "application/json")

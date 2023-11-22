@@ -1,11 +1,12 @@
 const txtElm = document.querySelector("#txt");
 const btnAddElm = document.querySelector("#btn-add");
 const taskContainerElm = document.querySelector("#task-container");
+const {API_URL} = process.env;
 
 loadAllTasks();
 
 function loadAllTasks(){
-    fetch('http://localhost:8080/tasks').then(res => {
+    fetch(`${API_URL}/tasks`).then(res => {
         if (res.ok){
             res.json().then(taskList => taskList.forEach(task => createTask(task))) ;
         }else{
@@ -20,11 +21,14 @@ function createTask(task){
     const liElm = document.createElement('li');
     taskContainerElm.append(liElm);
     liElm.id = "task-" + task.id;
+    liElm.className = 'd-flex justify-content-between p-1 px-3 align-items-center';
 
     liElm.innerHTML = `
-        <input id="chk-task-${task.id}" type="checkbox" ${task.status ? "checked": ""}>
-        <label for="chk-task-${task.id}">${task.description}</label>
-        <i class="delete bi bi-trash"></i>    
+        <div class="flex-grow-1 d-flex gap-2 align-items-center">
+            <input class="form-check-input m-0" id="chk-task-${task.id}" type="checkbox" ${task.status ? "checked": ""}>
+            <label class="flex-grow-1" for="chk-task-${task.id}">${task.description}</label>
+        </div>
+        <i class="delete bi bi-trash fs-4"></i>    
     `;
 }
 
@@ -33,7 +37,7 @@ taskContainerElm.addEventListener('click', (e)=>{
 
         const taskId = e.target.closest('li').id.substring(5);
 
-        fetch(`http://localhost:8080/tasks/${taskId}`, {method: 'DELETE'})
+        fetch(`${API_URL}/tasks/${taskId}`, {method: 'DELETE'})
         .then(res => {
             if (res.ok){
                 e.target.closest("li").remove();
@@ -53,7 +57,7 @@ taskContainerElm.addEventListener('click', (e)=>{
             status: e.target.checked
         };
 
-        fetch(`http://localhost:8080/tasks/${taskId}`, {
+        fetch(`${API_URL}/tasks/${taskId}`, {
             method: 'PATCH',
             headers: {
                 "Content-Type": "application/json"
@@ -71,8 +75,6 @@ taskContainerElm.addEventListener('click', (e)=>{
     }
 });
 
-let taskId = 0;
-
 btnAddElm.addEventListener('click', ()=>{
     const taskDescription = txtElm.value;
     
@@ -82,7 +84,7 @@ btnAddElm.addEventListener('click', ()=>{
         return;
     }
 
-    fetch('http://localhost:8080/tasks', {
+    fetch(`${API_URL}/tasks`, {
         method: 'POST',
         headers: {
             "Content-Type": "application/json"

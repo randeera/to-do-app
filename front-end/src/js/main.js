@@ -1,14 +1,44 @@
+import { signInWithPopup, signOut, onAuthStateChanged, GoogleAuthProvider } from 'firebase/auth';
+import {auth} from './firebase.js';
+
+const googleProvider = new GoogleAuthProvider();
 const txtElm = document.querySelector("#txt");
 const btnAddElm = document.querySelector("#btn-add");
+const btnSignInElm = document.querySelector("#btn-sign-in");
+const btnSingOutElm = document.querySelector("#btn-sign-out");
 const taskContainerElm = document.querySelector("#task-container");
+const loginOverlayElm = document.querySelector("#login-overlay");
+const loaderElm = document.querySelector("#loader");
 const {API_URL} = process.env;
+let loggedUser = null;
 
-loadAllTasks();
+onAuthStateChanged(auth, user => {
+    loaderElm.classList.add('d-none');
+    loggedUser = user;
+    console.log(loggedUser);
+    if (user){
+        loginOverlayElm.classList.add('d-none');
+        loadAllTasks();
+    }else{
+        loginOverlayElm.classList.remove('d-none');
+    }
+});
+
+btnSingOutElm.addEventListener('click', ()=>{
+    signOut(auth);
+});
+
+btnSignInElm.addEventListener('click', ()=>{
+    signInWithPopup(auth, googleProvider);
+});
 
 function loadAllTasks(){
-    fetch(`${API_URL}/tasks`).then(res => {
+    fetch(`${API_URL}/tasks?email=${loggedUser.email}`).then(res => {
         if (res.ok){
-            res.json().then(taskList => taskList.forEach(task => createTask(task))) ;
+            res.json().then(taskList => {
+                taskContainerElm.querySelectorAll("li").forEach(li => li.remove());
+                taskList.forEach(task => createTask(task))
+            }) ;
         }else{
             alert("Failed to load task list");
         }
@@ -89,7 +119,7 @@ btnAddElm.addEventListener('click', ()=>{
         headers: {
             "Content-Type": "application/json"
         },
-        body: JSON.stringify({description: txtElm.value})
+        body: JSON.stringify({description: txtElm.value, email: loggedUser.email})
     }).then(res => {
         if (res.ok){
             res.json().then(task => {

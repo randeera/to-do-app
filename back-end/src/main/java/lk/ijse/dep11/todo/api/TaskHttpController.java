@@ -8,18 +8,13 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
-import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
-import javax.sql.DataSource;
-import javax.validation.Valid;
-import javax.validation.groups.Default;
 import java.sql.*;
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
 @RestController
-@RequestMapping("/tasks")
+@RequestMapping("/api/v1/tasks")
 //@CrossOrigin(origins = {"http://localhost:5500"})
 @CrossOrigin
 public class TaskHttpController {
@@ -43,18 +38,19 @@ public class TaskHttpController {
     }
 
     @PreDestroy
-    public void destroy(){
+    public void destroy() {
         pool.close();
     }
 
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping(produces = "application/json", consumes = "application/json")
     public TaskTO createTask(@RequestBody @Validated TaskTO task) {
-        try (Connection connection = pool.getConnection()){
+        try (Connection connection = pool.getConnection()) {
             PreparedStatement stm = connection
-                    .prepareStatement("INSERT INTO task (description, status) VALUES (?, FALSE)",
+                    .prepareStatement("INSERT INTO task (description, status, email) VALUES (?, FALSE, ?)",
                             Statement.RETURN_GENERATED_KEYS);
             stm.setString(1, task.getDescription());
+            stm.setString(2, task.getEmail());
             stm.executeUpdate();
             ResultSet generatedKeys = stm.getGeneratedKeys();
             generatedKeys.next();
@@ -75,7 +71,7 @@ public class TaskHttpController {
             PreparedStatement stmExist = connection
                     .prepareStatement("SELECT * FROM task WHERE id = ?");
             stmExist.setInt(1, id);
-            if (!stmExist.executeQuery().next()){
+            if (!stmExist.executeQuery().next()) {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Task Not Found");
             }
 
@@ -93,11 +89,11 @@ public class TaskHttpController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @DeleteMapping("/{id}")
     public void deleteTask(@PathVariable("id") int taskId) {
-        try(Connection connection = pool.getConnection()){
+        try (Connection connection = pool.getConnection()) {
             PreparedStatement stmExist = connection
                     .prepareStatement("SELECT * FROM task WHERE id = ?");
             stmExist.setInt(1, taskId);
-            if (!stmExist.executeQuery().next()){
+            if (!stmExist.executeQuery().next()) {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Task Not Found");
             }
 
@@ -112,15 +108,16 @@ public class TaskHttpController {
     /* @ResponseStatus(HttpStatus.OK) */
     @GetMapping(produces = "application/json")
     public List<TaskTO> getAllTasks() {
-        try(Connection connection = pool.getConnection()){
+        try (Connection connection = pool.getConnection()) {
             Statement stm = connection.createStatement();
             ResultSet rst = stm.executeQuery("SELECT * FROM task ORDER BY id");
             List<TaskTO> taskList = new LinkedList<>();
-            while (rst.next()){
+            while (rst.next()) {
                 int id = rst.getInt("id");
                 String description = rst.getString("description");
                 boolean status = rst.getBoolean("status");
-                taskList.add(new TaskTO(id, description, status));
+                String email = rst.getString("email");
+                taskList.add(new TaskTO(id, description, status, email));
             }
             return taskList;
         } catch (SQLException e) {
